@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """
+Copyright (C) Rodrigo Ferreira, All Rights Reserved
+Unauthorized copying of this file, via any medium is strictly prohibited
+Proprietary and confidential
+"""
+
+"""
 Main module for face detection and storage application.
 Detects faces from webcam, shows them with green squares,
 and saves unique faces to the faces directory.

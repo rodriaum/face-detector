@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """
+Copyright (C) Rodrigo Ferreira, All Rights Reserved
+Unauthorized copying of this file, via any medium is strictly prohibited
+Proprietary and confidential
+"""
+
+"""
 Face detector module using OpenCV's Haar Cascade classifier.
 """
 
