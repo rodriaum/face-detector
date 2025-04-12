@@ -52,11 +52,11 @@ def main():
             if face_img.size > 0:  # Make sure face region is valid
                 if storage.is_new_face(face_img):
                     filename = storage.save_face(face_img)
-                    cv2.putText(display_frame, "New face saved!", (x, y - 10),
+                    cv2.putText(display_frame, "Rosto Detectado!", (x, y - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
         # Display the frame with detected faces
-        cv2.imshow('Face Detection', display_frame)
+        cv2.imshow('Detector de Rosto', display_frame)
 
         # Break the loop if 'q' is pressed
         if cv2.waitKey(1) & 0xFF == ord('q'):
