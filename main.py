@@ -4,6 +4,10 @@ Copyright (C) Rodrigo Ferreira, All Rights Reserved
 Unauthorized copying of this file, via any medium is strictly prohibited
 Proprietary and confidential
 """
+import asyncio
+import os
+
+from src.request.web_request import WebRequest
 
 """
 Main module for face detection and storage application.
@@ -12,18 +16,33 @@ and saves unique faces to the faces directory.
 """
 
 import cv2
-
+from dotenv import load_dotenv
 from src.detector.face_detector import FaceDetector
 from src.storage.face_storage import FaceStorage
 
 
-def main():
+async def main():
+    # Load environment variables from .env file
+    load_dotenv()
+
     # Initialize the webcam
     cap = cv2.VideoCapture(0)
 
-    # Initialize face detector and storage
+    api_url = os.getenv("FACE_STORAGE_API_URL")
+    api_key = os.getenv("FACE_STORAGE_API_KEY")
+
+    if not api_url or not api_key:
+        print("API URL or API key not found in .env file.")
+        return
+
+    # Initialize modules
+    web_request = WebRequest(api_url, api_key)
+
+    if not await web_request.ping_connection():
+        return
+
     detector = FaceDetector()
-    storage = FaceStorage("faces")
+    storage = FaceStorage(web_request)
 
     print("Starting face detection. Press 'q' to quit.")
 
@@ -51,7 +70,8 @@ def main():
             # Try to save the face if it's new
             if face_img.size > 0:  # Make sure face region is valid
                 if storage.is_new_face(face_img):
-                    filename = storage.save_face(face_img)
+                    await storage.save_face(face_img)
+
                     cv2.putText(display_frame, "Rosto Detectado!", (x, y - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
@@ -68,4 +88,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

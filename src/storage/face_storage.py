@@ -4,115 +4,85 @@ Copyright (C) Rodrigo Ferreira, All Rights Reserved
 Unauthorized copying of this file, via any medium is strictly prohibited
 Proprietary and confidential
 """
+from aiohttp import FormData
 
 """
 Face storage module for saving and comparing face images.
 """
-
-import os
-import time
-import uuid
 
 import cv2
 import numpy as np
 
 
 class FaceStorage:
-    def __init__(self, storage_dir):
+    def __init__(self, web_request):
         """
-        Initialize the face storage system.
+        Initialize the face storage system using a REST API.
 
         Args:
-            storage_dir (str): Directory to store face images
+            web_request (WebRequest): WebRequest class for making API calls
         """
-        self.storage_dir = storage_dir
-
-        # Create the storage directory if it doesn't exist
-        if not os.path.exists(storage_dir):
-            os.makedirs(storage_dir)
-
-        # Load existing faces for comparison
+        self.web_request = web_request
         self.stored_faces = self._load_stored_faces()
-
-        # Parameters for face comparison
-        self.similarity_threshold = 0.7  # Lower values require more similarity
+        self.similarity_threshold = 0.7  # Lower value = more strict comparison
 
     def _load_stored_faces(self):
         """
-        Load all stored face images for comparison.
+        Optionally load existing face data from the API.
 
         Returns:
-            list: List of (filename, image) tuples for all stored faces
+            list: List of (image_id, grayscale_face_image) tuples
         """
-        stored_faces = []
 
-        for filename in os.listdir(self.storage_dir):
-            if filename.endswith(('.jpg', '.jpeg', '.png')):
-                filepath = os.path.join(self.storage_dir, filename)
-                try:
-                    image = cv2.imread(filepath)
-                    if image is not None:
-                        # Resize for consistent comparison
-                        image = cv2.resize(image, (100, 100))
-                        stored_faces.append((filename, image))
-                except Exception as e:
-                    print(f"Error loading image {filename}: {e}")
-
-        return stored_faces
+        return []
 
     def is_new_face(self, face_img):
         """
         Check if a face is new (not similar to any stored face).
 
         Args:
-            face_img: Face image to check
+            face_img: Face image (NumPy array)
 
         Returns:
-            bool: True if this is a new face, False if similar to existing face
+            bool: True if the face is new, False if it's similar to a stored one
         """
         if len(self.stored_faces) == 0:
             return True
 
-        # Resize for consistent comparison
-        if face_img.shape[0] > 0 and face_img.shape[1] > 0:
-            face_resized = cv2.resize(face_img, (100, 100))
+        resized = cv2.resize(face_img, (100, 100))
+        gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
 
-            # Convert to grayscale for better comparison
-            face_gray = cv2.cvtColor(face_resized, cv2.COLOR_BGR2GRAY)
+        for _, stored_gray in self.stored_faces:
+            result = cv2.matchTemplate(gray, stored_gray, cv2.TM_CCOEFF_NORMED)
+            similarity = np.max(result)
 
-            # Check similarity with each stored face
-            for _, stored_face in self.stored_faces:
-                stored_gray = cv2.cvtColor(stored_face, cv2.COLOR_BGR2GRAY)
+            if similarity > self.similarity_threshold:
+                return False  # Similar face found
 
-                # Calculate normalized correlation coefficient
-                result = cv2.matchTemplate(face_gray, stored_gray, cv2.TM_CCOEFF_NORMED)
-                similarity = np.max(result)
+        return True  # No match found
 
-                if similarity > self.similarity_threshold:
-                    return False  # Similar face found
-
-        return True  # No similar face found
-
-    def save_face(self, face_img):
+    async def save_face(self, face_img):
         """
-        Save a face image to storage.
+        Asynchronously upload a face image to the API and keep it in memory for future comparisons.
 
         Args:
-            face_img: Face image to save
+            face_img: Face image (NumPy array)
 
         Returns:
-            str: Filename of the saved image
+            str or None: Image ID returned by the API, or None if failed
         """
-        # Generate a unique filename using UUID and timestamp
-        filename = f"face_{uuid.uuid4().hex}_{int(time.time())}.jpg"
-        filepath = os.path.join(self.storage_dir, filename)
+        # Encode image to JPEG format
+        success, img_encoded = cv2.imencode('.jpg', face_img)
+        if not success:
+            print("Failed to encode image.")
+            return None
 
-        # Save the image
-        cv2.imwrite(filepath, face_img)
+        # Create the multipart form data to send the image
+        form = FormData()
+        form.add_field('file', img_encoded.tobytes(), content_type='image/jpeg', filename='face.jpg')
 
-        # Add to stored faces for future comparison
-        if face_img.shape[0] > 0 and face_img.shape[1] > 0:
-            resized_face = cv2.resize(face_img, (100, 100))
-            self.stored_faces.append((filename, resized_face))
-
-        return filename
+        try:
+            await self.web_request.upload_image(face_img)
+        except Exception as e:
+            print(f"Error uploading image to API: {e}")
+            return None
