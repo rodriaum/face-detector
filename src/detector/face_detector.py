@@ -9,6 +9,8 @@ Face detector module using OpenCV's Haar Cascade classifier.
 
 import cv2
 
+from src.utils.config import CASCADE_CLASSIFIER, CASCADE_SCALE_FACTOR, CASCADE_MIN_NEIGHBORS, CASCADE_MIN_SIZE
+
 
 class FaceDetector:
     def __init__(self, cascade_path=None):
@@ -21,15 +23,14 @@ class FaceDetector:
         """
         if cascade_path is None:
             # Use OpenCV's built-in face cascade
-            self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades +
-                                                      'haarcascade_frontalface_default.xml')
+            self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + CASCADE_CLASSIFIER)
         else:
             self.face_cascade = cv2.CascadeClassifier(cascade_path)
 
         if self.face_cascade.empty():
             raise ValueError("Error loading face cascade classifier")
 
-    def detect_faces(self, image, scale_factor=1.1, min_neighbors=5, min_size=(30, 30)):
+    def detect_faces(self, image, scale_factor=CASCADE_SCALE_FACTOR, min_neighbors=CASCADE_MIN_NEIGHBORS, min_size=CASCADE_MIN_SIZE):
         """
         Detect faces in the input image.
 

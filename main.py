@@ -11,6 +11,7 @@ and saves unique faces to the faces directory.
 
 import asyncio
 import os
+import time
 
 import cv2
 from dotenv import load_dotenv
@@ -18,7 +19,7 @@ from dotenv import load_dotenv
 from src.detector.face_detector import FaceDetector
 from src.request.web_request import WebRequest
 from src.storage.face_storage import FaceStorage
-from src.utils.config import WINDOW_NAME, BOX_TEXT
+from src.utils.config import WINDOW_NAME, BOX_TEXT, SAVE_FACE_TIMEOUT
 
 
 async def main():
@@ -44,7 +45,11 @@ async def main():
     detector = FaceDetector()
     storage = FaceStorage(web_request)
 
+    await storage.load_stored_faces()
+
     print("Starting face detection. Press 'q' to quit.")
+
+    last_save_time = int(time.time())
 
     while True:
         # Capture frame-by-frame
@@ -69,15 +74,20 @@ async def main():
 
             # Try to save the face if it's new
             if face_img.size > 0:  # Make sure face region is valid
-                if await storage.is_new_face(face_img):
-                    await storage.save_face(face_img)
+                current_time = int(time.time())
 
-                    cv2.putText(display_frame, BOX_TEXT, (x, y - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                if current_time - last_save_time >= SAVE_FACE_TIMEOUT:
+                    if await storage.is_new_face(face_img):
 
-                    print("[DEBUG] New face detected and saved.")
-                else:
-                    print("[DEBUG] Face already exists in storage.")
+                        await storage.save_face(face_img)
+                        last_save_time = current_time
+
+                        cv2.putText(display_frame, BOX_TEXT, (x, y - 10),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+                        print("[DEBUG] New face detected and saved.")
+                    else:
+                        print("[DEBUG] Face already exists in storage.")
 
         # Display the frame with detected faces
         cv2.imshow(WINDOW_NAME, display_frame)

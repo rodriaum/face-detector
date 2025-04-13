@@ -11,7 +11,7 @@ import cv2
 import numpy as np
 from aiohttp import FormData
 
-from src.utils.config import SIMILARITY_THRESHOLD, DEBUG_MODE, USE_SAVED_IMAGES
+from src.utils.config import SIMILARITY_THRESHOLD, USE_SAVED_IMAGES, DEBUG_MODE
 
 
 class FaceStorage:
@@ -22,14 +22,18 @@ class FaceStorage:
         Args:
             web_request (WebRequest): WebRequest class for making API calls
         """
+        self.stored_faces = None
         self.web_request = web_request
-        self.stored_faces = self._load_stored_faces()
 
+        self.debug_mode = DEBUG_MODE
         self.similarity_threshold = SIMILARITY_THRESHOLD # Lower value = more strict comparison
         self.debug_mode = DEBUG_MODE
         self.use_saved_images = USE_SAVED_IMAGES
 
-    async def _load_stored_faces(self):
+    async def load_stored_faces(self):
+        self.stored_faces = await self._get_stored_faces_by_request()
+
+    async def _get_stored_faces_by_request(self):
         """
         Optionally load existing face data from the API.
 
@@ -39,7 +43,7 @@ class FaceStorage:
 
         # TODO: Implement loading stored faces from the API
         # 64 is the colour mode for grayscale images
-        return await self.web_request.get_all_images(colour_mode_id=6) or []
+        return await self.web_request.get_all_images(colour_mode_id=cv2.COLOR_BGR2GRAY) or []
 
     async def is_new_face(self, face_img):
         """
@@ -54,22 +58,26 @@ class FaceStorage:
         if not self.use_saved_images:
             return True
 
-        stored_faces = await self.stored_faces
-
-        if len(stored_faces) == 0:
+        if len(self.stored_faces) == 0:
             return True
 
         resized = cv2.resize(face_img, (100, 100))
         gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
 
-        for _, stored_gray in stored_faces:
+        if self.debug_mode:
+            print("[DEBUG] Face image shape:", face_img.shape)
+            print("[DEBUG] Stored faces:", len(self.stored_faces))
+
+        for stored_data in self.stored_faces:
+            stored_gray = stored_data[1]  # Assuming the second element is the gray image
             result = cv2.matchTemplate(gray, stored_gray, cv2.TM_CCOEFF_NORMED)
             similarity = np.max(result)
 
             if similarity > self.similarity_threshold:
-                return False  # Similar face found
+                return False
 
-        return True  # No match found
+        print("Face is new!")
+        return True
 
     async def save_face(self, face_img):
         """
@@ -92,7 +100,21 @@ class FaceStorage:
         form.add_field('file', img_encoded.tobytes(), content_type='image/jpeg', filename='face.jpg')
 
         try:
-            await self.web_request.upload_image(face_img)
+            image_id = await self.web_request.upload_image(face_img)
+
+            if not image_id:
+                return None
+
+            # Convert face image to grayscale for storing locally
+            resized = cv2.resize(face_img, (100, 100))
+            gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+
+            # Save the face image and ID in stored_faces for future comparison
+            self.stored_faces.append((image_id, gray))
+
+            if self.debug_mode:
+                print(f"[DEBUG] Image uploaded successfully with ID: {image_id}")
+
         except Exception as e:
             print(f"Error uploading image to API: {e}")
             return None
