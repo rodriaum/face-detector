@@ -1,8 +1,17 @@
+"""
+Copyright (C) Rodrigo Ferreira, All Rights Reserved
+Unauthorized copying of this file, via any medium is strictly prohibited
+Proprietary and confidential
+"""
+import base64
 import ssl
 
 import aiohttp
 import cv2
+import numpy as np
 from aiohttp import FormData, ClientTimeout
+
+from src.utils.config import CLIENT_TIMEOUT
 
 
 class WebRequest:
@@ -17,7 +26,11 @@ class WebRequest:
         self.api_url = api_url.rstrip('/')  # Ensure no trailing slash
         self.api_key = api_key
 
-        self.client_timeout = ClientTimeout(total=30)
+        self.client_timeout = ClientTimeout(total=CLIENT_TIMEOUT)
+
+        self.headers = {
+            "Authorization": f"Bearer {self.api_key}",
+        }
 
         self.ssl_context = ssl.create_default_context()
         self.ssl_context.check_hostname = False
@@ -70,12 +83,8 @@ class WebRequest:
         form = FormData()
         form.add_field('file', img_encoded.tobytes(), content_type='image/jpeg', filename=filename)
 
-        headers = {
-            'Authorization': f'Bearer {self.api_key}'
-        }
-
         # Send the POST request to upload the image
-        response = await self._send_post_request('v1/Images/upload', form, headers)
+        response = await self._send_post_request('v1/Images/upload', form, self.headers)
 
         if response:
             return response.get('id')  # Assuming the response contains an 'id' field for the image
@@ -91,13 +100,9 @@ class WebRequest:
         Returns:
             bool: True if the image was deleted, False otherwise.
         """
-        headers = {
-            'Authorization': f'Bearer {self.api_key}'
-        }
-
         try:
             async with aiohttp.ClientSession(timeout=self.client_timeout) as session:
-                async with session.delete(f'{self.api_url}/v1/images/{image_id}', headers=headers, ssl=self.ssl_context) as response:
+                async with session.delete(f'{self.api_url}/v1/images/{image_id}', headers=self.headers, ssl=self.ssl_context) as response:
                     if response.status == 200:
                         print(f"Image with ID {image_id} deleted successfully.")
                         return True
@@ -118,13 +123,9 @@ class WebRequest:
         Returns:
             dict: Image information, or None if failed.
         """
-        headers = {
-            'Authorization': f'Bearer {self.api_key}'
-        }
-
         try:
             async with aiohttp.ClientSession(timeout=self.client_timeout) as session:
-                async with session.get(f'{self.api_url}/v1/images/info/{image_id}', headers=headers) as response:
+                async with session.get(f'{self.api_url}/v1/images/info/{image_id}', headers=self.headers, ssl=self.ssl_context) as response:
                     if response.status == 200:
                         return await response.json()  # Return the image info as JSON
                     else:
@@ -134,11 +135,57 @@ class WebRequest:
             print(f"Error retrieving image info.\n -> {e}")
             return None
 
+    async def get_all_images(self, colour_mode_id=None):
+        """
+        Retrieves all stored images from the API and converts them to grayscale.
+
+        Args:
+            colour_mode_id (int): ID of the colour mode to use for conversion.
+
+        Returns:
+            list: List of (image_id, grayscale_face_image) tuples.
+        """
+        try:
+            async with aiohttp.ClientSession(timeout=self.client_timeout) as session:
+                async with session.get(f'{self.api_url}/v1/images/get', headers=self.headers, ssl=self.ssl_context) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        results = []
+
+                        for item in data:
+                            image_id = item.get("id")
+                            base64_str = item.get("base64")
+
+                            if not base64_str:
+                                continue
+
+                            # Decode base64 to image
+                            image_data = base64.b64decode(base64_str)
+                            np_arr = np.frombuffer(image_data, np.uint8)
+                            img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+                            if img is None:
+                                continue
+
+                            if colour_mode_id is not None:
+                                gray_img = cv2.cvtColor(img, colour_mode_id)
+
+                            results.append((image_id, gray_img))
+
+                        return results
+
+                    else:
+                        print(f"Failed to fetch images: status {response.status}")
+                        return []
+        except Exception as e:
+            print(f"Error while fetching images.\n -> {e}")
+            return []
+
     async def ping_connection(self):
         try:
             async with aiohttp.ClientSession(timeout=self.client_timeout) as session:
                 async with session.get(f'{self.api_url}/v1/images/ping',
-                                       headers={'Authorization': f'Bearer {self.api_key}'}, ssl=self.ssl_context) as response:
+                                       headers=self.headers, ssl=self.ssl_context) as response:
                     if response.status == 200:
                         print("API is reachable.")
                         return True

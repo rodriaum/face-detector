@@ -3,15 +3,15 @@
 Copyright (C) Rodrigo Ferreira, All Rights Reserved
 Unauthorized copying of this file, via any medium is strictly prohibited
 Proprietary and confidential
-"""
-from aiohttp import FormData
 
-"""
 Face storage module for saving and comparing face images.
 """
 
 import cv2
 import numpy as np
+from aiohttp import FormData
+
+from src.utils.config import SIMILARITY_THRESHOLD, DEBUG_MODE, USE_SAVED_IMAGES
 
 
 class FaceStorage:
@@ -24,9 +24,12 @@ class FaceStorage:
         """
         self.web_request = web_request
         self.stored_faces = self._load_stored_faces()
-        self.similarity_threshold = 0.7  # Lower value = more strict comparison
 
-    def _load_stored_faces(self):
+        self.similarity_threshold = SIMILARITY_THRESHOLD # Lower value = more strict comparison
+        self.debug_mode = DEBUG_MODE
+        self.use_saved_images = USE_SAVED_IMAGES
+
+    async def _load_stored_faces(self):
         """
         Optionally load existing face data from the API.
 
@@ -34,9 +37,11 @@ class FaceStorage:
             list: List of (image_id, grayscale_face_image) tuples
         """
 
-        return []
+        # TODO: Implement loading stored faces from the API
+        # 64 is the colour mode for grayscale images
+        return await self.web_request.get_all_images(colour_mode_id=6) or []
 
-    def is_new_face(self, face_img):
+    async def is_new_face(self, face_img):
         """
         Check if a face is new (not similar to any stored face).
 
@@ -46,13 +51,18 @@ class FaceStorage:
         Returns:
             bool: True if the face is new, False if it's similar to a stored one
         """
-        if len(self.stored_faces) == 0:
+        if not self.use_saved_images:
+            return True
+
+        stored_faces = await self.stored_faces
+
+        if len(stored_faces) == 0:
             return True
 
         resized = cv2.resize(face_img, (100, 100))
         gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
 
-        for _, stored_gray in self.stored_faces:
+        for _, stored_gray in stored_faces:
             result = cv2.matchTemplate(gray, stored_gray, cv2.TM_CCOEFF_NORMED)
             similarity = np.max(result)
 

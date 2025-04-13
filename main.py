@@ -3,22 +3,22 @@
 Copyright (C) Rodrigo Ferreira, All Rights Reserved
 Unauthorized copying of this file, via any medium is strictly prohibited
 Proprietary and confidential
-"""
-import asyncio
-import os
 
-from src.request.web_request import WebRequest
-
-"""
 Main module for face detection and storage application.
 Detects faces from webcam, shows them with green squares,
 and saves unique faces to the faces directory.
 """
 
+import asyncio
+import os
+
 import cv2
 from dotenv import load_dotenv
+
 from src.detector.face_detector import FaceDetector
+from src.request.web_request import WebRequest
 from src.storage.face_storage import FaceStorage
+from src.utils.config import WINDOW_NAME, BOX_TEXT
 
 
 async def main():
@@ -69,14 +69,18 @@ async def main():
 
             # Try to save the face if it's new
             if face_img.size > 0:  # Make sure face region is valid
-                if storage.is_new_face(face_img):
+                if await storage.is_new_face(face_img):
                     await storage.save_face(face_img)
 
-                    cv2.putText(display_frame, "Rosto Detectado!", (x, y - 10),
+                    cv2.putText(display_frame, BOX_TEXT, (x, y - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
+                    print("[DEBUG] New face detected and saved.")
+                else:
+                    print("[DEBUG] Face already exists in storage.")
+
         # Display the frame with detected faces
-        cv2.imshow('Detector de Rosto', display_frame)
+        cv2.imshow(WINDOW_NAME, display_frame)
 
         # Break the loop if 'q' is pressed
         if cv2.waitKey(1) & 0xFF == ord('q'):
