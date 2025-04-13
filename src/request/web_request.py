@@ -97,7 +97,7 @@ class WebRequest:
 
         try:
             async with aiohttp.ClientSession(timeout=self.client_timeout) as session:
-                async with session.delete(f'{self.api_url}/v1/Images/{image_id}', headers=headers, ssl=self.ssl_context) as response:
+                async with session.delete(f'{self.api_url}/v1/images/{image_id}', headers=headers, ssl=self.ssl_context) as response:
                     if response.status == 200:
                         print(f"Image with ID {image_id} deleted successfully.")
                         return True
@@ -124,7 +124,7 @@ class WebRequest:
 
         try:
             async with aiohttp.ClientSession(timeout=self.client_timeout) as session:
-                async with session.get(f'{self.api_url}/v1/Images/info/{image_id}', headers=headers) as response:
+                async with session.get(f'{self.api_url}/v1/images/info/{image_id}', headers=headers) as response:
                     if response.status == 200:
                         return await response.json()  # Return the image info as JSON
                     else:
@@ -137,7 +137,7 @@ class WebRequest:
     async def ping_connection(self):
         try:
             async with aiohttp.ClientSession(timeout=self.client_timeout) as session:
-                async with session.get(f'{self.api_url}/v1/Images/ping',
+                async with session.get(f'{self.api_url}/v1/images/ping',
                                        headers={'Authorization': f'Bearer {self.api_key}'}, ssl=self.ssl_context) as response:
                     if response.status == 200:
                         print("API is reachable.")
