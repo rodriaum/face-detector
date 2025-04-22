@@ -3,23 +3,40 @@
 > [!CAUTION]
 > A cópia não autorizada deste projeto, por qualquer meio, é estritamente proibida.
 
-## Requisitos
+Este repositório contém dois componentes principais:  
+- **Detector de Rosto APP (Python)**
+- **Detector de Rosto: API (ASP.NET Core)**
 
+---
+
+## 🔧 Requisitos
+
+### Aplicativo (Python)
 - Python 3.6+
 - OpenCV
 - NumPy
 
-## Instalação
+### API (.NET)
+- .NET SDK 8.0 ou superior
 
-1. Clonar Projeto
+---
+
+## 🚀 Instalação e Execução
+
+1. Clonar o Repositório
 ```bash
-git clone git@github.com:rodriaum/face-detector-app.git
+git clone git@github.com:rodriaum/face-detector-suite.git
+cd face-detector-suite
 ```
-2. Instalar Requisitos:
+2. APP (Python)
 ```bash
+cd app
 pip install -r requirements.txt
-```
-3. Execute o Script Principal:
-```bash
 python main.py
+```
+3. API (.NET)
+```bash
+cd api
+dotnet restore
+dotnet run
 ```
