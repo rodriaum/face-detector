@@ -30,13 +30,13 @@ cd face-detector-suite
 ```
 2. APP (Python)
 ```bash
-cd app
+cd src/App
 pip install -r requirements.txt
 python main.py
 ```
 3. API (.NET)
 ```bash
-cd api
+cd src/Api
 dotnet restore
 dotnet run
 ```
