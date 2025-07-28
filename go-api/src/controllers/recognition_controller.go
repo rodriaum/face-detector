@@ -104,7 +104,7 @@ func (c *RecognitionController) UploadImage(ctx *gin.Context) {
 // @Success 200 {array} map[string]interface{} "A list of images"
 // @Failure 404 {object} map[string]interface{} "No images found"
 // @Failure 500 {object} map[string]interface{} "Internal server error"
-// @Router /images/get-all [get]
+// @Router /images/list [get]
 func (c *RecognitionController) GetImages(ctx *gin.Context) {
 	filesData, err := c.mongoService.GetAllFiles()
 	if err != nil {
@@ -176,7 +176,7 @@ func (c *RecognitionController) GetImage(ctx *gin.Context) {
 // @Param id path string true "Image ID"
 // @Success 200 {object} models.FileUploadResponse "Image information retrieved successfully"
 // @Failure 404 {object} map[string]interface{} "Image not found"
-// @Router /images/info/{id} [get]
+// @Router /images/metadata/{id} [get]
 func (c *RecognitionController) GetImageInfo(ctx *gin.Context) {
 	id := ctx.Param("id")
 

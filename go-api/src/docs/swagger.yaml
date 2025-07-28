@@ -40,32 +40,6 @@ paths:
       summary: Delete image by ID
       tags:
       - Images
-  /images/get-all:
-    get:
-      description: Retrieve a list of all uploaded images with base64 encoded data
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: A list of images
-          schema:
-            items:
-              additionalProperties: true
-              type: object
-            type: array
-        "404":
-          description: No images found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get all images
-      tags:
-      - Images
   /images/get/{id}:
     get:
       description: Retrieve a specific image by its ID
@@ -91,30 +65,6 @@ paths:
             additionalProperties: true
             type: object
       summary: Get image by ID
-      tags:
-      - Images
-  /images/info/{id}:
-    get:
-      description: Retrieve metadata about a specific image
-      parameters:
-      - description: Image ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Image information retrieved successfully
-          schema:
-            $ref: '#/definitions/models.FileUploadResponse'
-        "404":
-          description: Image not found
-          schema:
-            additionalProperties: true
-            type: object
-      summary: Get image information
       tags:
       - Images
   /images/list:
@@ -156,7 +106,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Image metadata retrieved successfully
+          description: Image information retrieved successfully
           schema:
             $ref: '#/definitions/models.FileUploadResponse'
         "404":
@@ -164,7 +114,7 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      summary: Get image metadata
+      summary: Get image information
       tags:
       - Images
   /images/upload:

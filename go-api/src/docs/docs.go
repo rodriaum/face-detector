@@ -45,44 +45,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/images/get-all": {
-            "get": {
-                "description": "Retrieve a list of all uploaded images with base64 encoded data",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Images"
-                ],
-                "summary": "Get all images",
-                "responses": {
-                    "200": {
-                        "description": "A list of images",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "additionalProperties": true
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "No images found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
         "/images/get/{id}": {
             "get": {
                 "description": "Retrieve a specific image by its ID",
@@ -115,42 +77,6 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/images/info/{id}": {
-            "get": {
-                "description": "Retrieve metadata about a specific image",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Images"
-                ],
-                "summary": "Get image information",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Image ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Image information retrieved successfully",
-                        "schema": {
-                            "$ref": "#/definitions/models.FileUploadResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Image not found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -206,7 +132,7 @@ const docTemplate = `{
                 "tags": [
                     "Images"
                 ],
-                "summary": "Get image metadata",
+                "summary": "Get image information",
                 "parameters": [
                     {
                         "type": "string",
@@ -218,7 +144,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Image metadata retrieved successfully",
+                        "description": "Image information retrieved successfully",
                         "schema": {
                             "$ref": "#/definitions/models.FileUploadResponse"
                         }
