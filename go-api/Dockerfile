@@ -6,7 +6,8 @@ COPY go.mod go.sum ./
 
 RUN go mod download
 
-COPY src/ ./
+COPY cmd/api/ ./
+COPY internal/ ./
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o face-detector-api
 
