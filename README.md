@@ -49,4 +49,4 @@ The Go API provides a backend component for exposing face detection functionalit
 
 ## License
 
-See the repository for license information.
+This project is distributed under the [MIT License](./LICENSE).
